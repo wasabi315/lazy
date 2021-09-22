@@ -8,7 +8,7 @@ export function Fun(fun) {
     if (arity < nargs) {
       return fun(...args.slice(0, arity))(...args.slice(arity));
     }
-    const pap = (...extraArgs) => fun(...args, ...extraArgs);
+    const pap = (...args2) => fun(...args, ...args2);
     Object.defineProperty(pap, "length", { value: arity - nargs });
     return Fun(pap);
   };
@@ -16,10 +16,10 @@ export function Fun(fun) {
   return wrapped;
 }
 
-export function Thunk(thunkFun) {
+export function Thunk(innerThunk) {
   let thunk = () => {
     thunk = Blackhole;
-    const value = Evaluate(thunkFun);
+    const value = Evaluate(innerThunk);
     thunk = () => value;
     return value;
   };

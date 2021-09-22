@@ -2,10 +2,9 @@ import { Fun, Thunk, Raw, Con, Case, Evaluate } from "./lazy.js";
 
 const flip = Fun((f, x, y) => f(y, x));
 
-const True = Thunk(() => Con("True"));
-const False = Thunk(() => Con("False"));
+const True = Con("True");
+const False = Con("False");
 
-const Num = (n) => Thunk(() => Raw(n));
 const add = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
@@ -28,16 +27,16 @@ const isNotDivisible = Fun((x, y) => {
   });
 });
 
-const nil = Thunk(() => Con("nil"));
-const cons = (x, xs) => Con("cons", x, xs);
+const Nil = () => Con("Nil");
+const Cons = (x, xs) => Con("Cons", x, xs);
 const filter = Fun((f, xs) => {
   return Case(xs, {
-    nil: () => nil,
-    cons: (x, xs) => {
+    Nil: () => Nil,
+    Cons: (x, xs) => {
       return Case(f(x), {
         True: () => {
           const ffxs = Thunk(() => filter(f, xs));
-          return cons(x, ffxs);
+          return Cons(x, ffxs);
         },
         False: () => filter(f, xs),
       });
@@ -45,30 +44,32 @@ const filter = Fun((f, xs) => {
   });
 });
 const enumFrom = Fun((x) => {
-  const y = Thunk(() => add(x, Num(1)));
+  const one = Thunk(() => Raw(1));
+  const y = Thunk(() => add(x, one));
   const xs = Thunk(() => enumFrom(y));
-  return cons(x, xs);
+  return Cons(x, xs);
 });
 const take = Fun((n, xs) => {
   return Case(
     n,
     {
-      [0]: () => nil,
+      [0]: () => Nil,
     },
     () => {
       return Case(xs, {
-        nil: () => nil,
-        cons: (x, xs) => {
-          const m = Thunk(() => sub(n, Num(1)));
+        Nil: () => Nil,
+        Cons: (x, xs) => {
+          const one = Thunk(() => Raw(1));
+          const m = Thunk(() => sub(n, one));
           const ys = Thunk(() => take(m, xs));
-          return cons(x, ys);
+          return Cons(x, ys);
         },
       });
     }
   );
 });
 
-const unit = Thunk(() => Con("unit"));
+const Unit = Con("Unit");
 const pure = Fun((x) => x);
 const then = Fun((x, y) => {
   Evaluate(x);
@@ -78,13 +79,13 @@ const then = Fun((x, y) => {
 const printRaw = Fun((x) => {
   return Case(x, {}, (n) => {
     console.log(n);
-    return unit;
+    return pure(Unit);
   });
 });
 const traverse_ = Fun((f, xs) => {
   return Case(xs, {
-    nil: () => Thunk(() => pure(unit)),
-    cons: (x, xs) => {
+    Nil: () => Thunk(() => pure(Unit)),
+    Cons: (x, xs) => {
       const fx = Thunk(() => f(x));
       const tfxs = Thunk(() => traverse_(f, xs));
       return then(fx, tfxs);
@@ -95,24 +96,23 @@ const traverse_ = Fun((f, xs) => {
 const primes = Thunk(() => {
   const filterPrime = Fun((xs) => {
     return Case(xs, {
-      cons: (p, xs) => {
+      Cons: (p, xs) => {
         const pred = Thunk(() => flip(isNotDivisible, p));
         const ys = Thunk(() => filter(pred, xs));
         const ps = Thunk(() => filterPrime(ys));
-        return cons(p, ps);
+        return Cons(p, ps);
       },
     });
   });
-  const fromTwo = Thunk(() => enumFrom(Num(2)));
+  const two = Thunk(() => Raw(2));
+  const fromTwo = Thunk(() => enumFrom(two));
   return filterPrime(fromTwo);
 });
 
-Evaluate(
-  traverse_(
-    printRaw,
-    take(
-      Thunk(() => Raw(500)),
-      primes
-    )
-  )
-);
+const main = Thunk(() => {
+  const n = Thunk(() => Raw(100));
+  const fs = Thunk(() => take(n, primes));
+  return traverse_(printRaw, fs);
+});
+
+Evaluate(main);

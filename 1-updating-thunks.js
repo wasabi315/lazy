@@ -1,7 +1,8 @@
-// １回評価したら次はその値を返す
-function Thunk(thunkFun) {
+function Thunk(innerThunk) {
   let thunk = () => {
-    const value = Evaluate(thunkFun);
+    // First, evaluate innerThunk
+    const value = Evaluate(innerThunk);
+    // Then, self-updating to return evaluated value
     thunk = () => value;
     return value;
   };
@@ -15,11 +16,12 @@ function Evaluate(value) {
   return value;
 }
 
+/******************************************************************************/
+
 const one = Thunk(() => {
   console.log("one evaluated");
   return 1;
 });
-const one_ = Thunk(() => one);
 
-console.log(Evaluate(one_));
-console.log(Evaluate(one_));
+console.log(Evaluate(one));
+console.log(Evaluate(one));

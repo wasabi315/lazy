@@ -1,2 +1,2 @@
 # lazy
-Lazy Evaluation implementation in JavaScript
+STG-like lazy evaluation mechanism in JavaScript

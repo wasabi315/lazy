@@ -8,7 +8,7 @@ function Fun(fun) {
     if (arity < nargs) {
       return fun(...args.slice(0, arity))(...args.slice(arity));
     }
-    const pap = (...extraArgs) => fun(...args, ...extraArgs);
+    const pap = (...args2) => fun(...args, ...args2);
     Object.defineProperty(pap, "length", { value: arity - nargs });
     return Fun(pap);
   };
@@ -16,36 +16,43 @@ function Fun(fun) {
   return wrapped;
 }
 
-function Thunk(thunkFun) {
+function Thunk(innerThunk) {
   let thunk = () => {
-    const value = Evaluate(thunkFun);
+    const value = Evaluate(innerThunk);
     thunk = () => value;
     return value;
   };
   return Fun(() => thunk());
 }
 
-// コンストラクタの適用 => 適切な継続(alternatives)を選ぶ
+function Raw(value) {
+  return (alts, def) => {
+    const alt = alts[value];
+    if (alt) {
+      return alt();
+    }
+    if (def) {
+      return def(value);
+    }
+    throw new Error("No matched alternative");
+  };
+}
+
 function Con(con, ...args) {
   return (alts, def) => {
     const alt = alts[con];
-    // マッチするalternativeがあった時
     if (alt) {
       return alt(...args);
     }
-
-    // デフォルトのalternativeがあった時
     if (def) {
       const x = Thunk(() => Con(con, ...args));
       return def(x);
     }
-
     throw new Error("No matched alternative");
   };
 }
 
 function Case(x, alts, def) {
-  // xを評価してそこに継続を渡す
   return Evaluate(x)(alts, def);
 }
 
@@ -56,22 +63,13 @@ function Evaluate(value) {
   return value;
 }
 
-const nil = Con("nil");
-const cons = (x, xs) => Con("cons", x, xs);
+/******************************************************************************/
 
-const undef = Thunk(() => {
-  throw new Error("undef");
+const printRaw = Fun((x) => {
+  return Case(x, {}, (n) => {
+    console.log(n);
+  });
 });
-
-const head = Fun((xs) =>
-  Case(xs, {
-    cons: (x, _) => x,
-  })
-);
-
-const one = Thunk(() => 1);
-const list1 = Thunk(() => cons(undef, nil));
-const list2 = Thunk(() => cons(undef, list1));
-const list3 = Thunk(() => cons(one, list2));
-console.log(Evaluate(head(list3)));
-console.log(Evaluate(head(nil)));
+const one = Thunk(() => Raw(1));
+const main = Thunk(() => printRaw(one));
+Evaluate(main);

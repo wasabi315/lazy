@@ -16,14 +16,8 @@ function Fun(fun) {
   return wrapped;
 }
 
-function Blackhole() {
-  throw new Error("Blackhole");
-}
-
 function Thunk(innerThunk) {
   let thunk = () => {
-    // set Blackhole to detect "invalid" infinite recursion
-    thunk = Blackhole;
     const value = Evaluate(innerThunk);
     thunk = () => value;
     return value;
@@ -31,25 +25,15 @@ function Thunk(innerThunk) {
   return Fun(() => thunk());
 }
 
-function Raw(value) {
-  return (alts, def) => {
-    const alt = alts[value];
-    if (alt) {
-      return alt();
-    }
-    if (def) {
-      return def(value);
-    }
-    throw new Error("No matched alternative");
-  };
-}
-
+// コンストラクタの適用 => 適切な継続(alternatives)を選ぶ
 function Con(con, ...args) {
   return (alts, def) => {
     const alt = alts[con];
+    // マッチするalternativeがあった時
     if (alt) {
       return alt(...args);
     }
+    // デフォルトのalternativeがあった時
     if (def) {
       const x = Thunk(() => Con(con, ...args));
       return def(x);
@@ -59,6 +43,7 @@ function Con(con, ...args) {
 }
 
 function Case(x, alts, def) {
+  // xを評価してそこに継続を渡す
   return Evaluate(x)(alts, def);
 }
 
@@ -71,20 +56,12 @@ function Evaluate(value) {
 
 /******************************************************************************/
 
-const one = Thunk(() => Raw(1));
-
-const Cons = (x, xs) => Con("Cons", x, xs);
-const ok = Thunk(() => Cons(one, ok));
-Evaluate(ok);
-console.log("done");
-
-const add = Fun((x, y) => {
-  return Case(x, {}, (n) => {
-    return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n + m));
-    });
+const Pair = (x, y) => Con("Pair", x, y);
+const fst = Fun((p) => {
+  return Case(p, {
+    Pair: (x, _) => x,
   });
 });
-const bad = Thunk(() => add(one, bad));
-Evaluate(bad);
-console.log("done");
+
+const pair = Thunk(() => Pair(1, 2));
+console.log(Evaluate(Thunk(() => fst(pair))));

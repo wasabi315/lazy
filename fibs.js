@@ -17,21 +17,21 @@ const sub = Fun((x, y) => {
   });
 });
 
-const nil = Thunk(() => Con("nil"));
-const cons = (x, xs) => Con("cons", x, xs);
+const Nil = Con("Nil");
+const Cons = (x, xs) => Con("Cons", x, xs);
 const take = Fun((n, xs) => {
   return Case(
     n,
     {
-      [0]: () => nil,
+      [0]: () => Nil,
     },
     () => {
       return Case(xs, {
-        nil: () => nil,
-        cons: (x, xs) => {
+        Nil: () => Nil,
+        Cons: (x, xs) => {
           const m = Thunk(() => sub(n, one));
           const ys = Thunk(() => take(m, xs));
-          return cons(x, ys);
+          return Cons(x, ys);
         },
       });
     }
@@ -39,14 +39,14 @@ const take = Fun((n, xs) => {
 });
 const zipWith = Fun((f, xs, ys) => {
   return Case(xs, {
-    nil: () => nil,
-    cons: (x, xs) => {
+    Nil: () => Nil,
+    Cons: (x, xs) => {
       return Case(ys, {
-        nil: () => nil,
-        cons: (y, ys) => {
+        Nil: () => Nil,
+        Cons: (y, ys) => {
           const z = Thunk(() => f(x, y));
           const zs = Thunk(() => zipWith(f, xs, ys));
-          return cons(z, zs);
+          return Cons(z, zs);
         },
       });
     },
@@ -54,11 +54,11 @@ const zipWith = Fun((f, xs, ys) => {
 });
 const tail = Fun((xs) => {
   return Case(xs, {
-    cons: (_, xs) => xs,
+    Cons: (_, xs) => xs,
   });
 });
 
-const unit = Thunk(() => Con("unit"));
+const Unit = Con("Unit");
 const pure = Fun((x) => x);
 const then = Fun((x, y) => {
   Evaluate(x);
@@ -68,13 +68,13 @@ const then = Fun((x, y) => {
 const printRaw = Fun((x) => {
   return Case(x, {}, (n) => {
     console.log(n);
-    return unit;
+    return pure(Unit);
   });
 });
 const traverse_ = Fun((f, xs) => {
   return Case(xs, {
-    nil: () => Thunk(() => pure(unit)),
-    cons: (x, xs) => {
+    Nil: () => Thunk(() => pure(Unit)),
+    Cons: (x, xs) => {
       const fx = Thunk(() => f(x));
       const tfxs = Thunk(() => traverse_(f, xs));
       return then(fx, tfxs);
@@ -85,16 +85,14 @@ const traverse_ = Fun((f, xs) => {
 const fibs = Thunk(() => {
   const _fibs = Thunk(() => tail(fibs));
   const xs = Thunk(() => zipWith(add, fibs, _fibs));
-  const ys = Thunk(() => cons(one, xs));
-  return cons(zero, ys);
+  const ys = Thunk(() => Cons(one, xs));
+  return Cons(zero, ys);
 });
 
-Evaluate(
-  traverse_(
-    printRaw,
-    take(
-      Thunk(() => Raw(100)),
-      fibs
-    )
-  )
-);
+const main = Thunk(() => {
+  const n = Thunk(() => Raw(100));
+  const fs = Thunk(() => take(n, fibs));
+  return traverse_(printRaw, fs);
+});
+
+Evaluate(main);
