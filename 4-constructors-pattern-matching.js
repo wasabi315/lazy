@@ -25,25 +25,44 @@ function Thunk(innerThunk) {
   return Fun(() => thunk());
 }
 
-// コンストラクタの適用 => 適切な継続(alternatives)を選ぶ
-function Con(con, ...args) {
+function Con(conName, ...args) {
+  // Takes alternatives as arguments
   return (alts, def) => {
-    const alt = alts[con];
-    // マッチするalternativeがあった時
+    // Look up an appropriate alternative
+    const alt = alts[conName];
     if (alt) {
+      // Execute the matched alternative
       return alt(...args);
     }
-    // デフォルトのalternativeがあった時
     if (def) {
-      const x = Thunk(() => Con(con, ...args));
+      // Create a thunk of constructor
+      const x = Thunk(() => Con(conName, ...args));
+      // Execute the default alternative
       return def(x);
     }
     throw new Error("No matched alternative");
   };
 }
 
+function Int(n) {
+  // Takes alternatives as arguments
+  return (alts, def) => {
+    // Look up an appropriate alternative
+    const alt = alts[n];
+    if (alt) {
+      // Execute matched alternative
+      return alt();
+    }
+    if (def) {
+      // Execute default alternative
+      return def(n);
+    }
+    throw new Error("No matched alternative");
+  };
+}
+
 function Case(x, alts, def) {
-  // xを評価してそこに継続を渡す
+  // Pass alternatives to constructors and Int values
   return Evaluate(x)(alts, def);
 }
 
@@ -65,3 +84,12 @@ const fst = Fun((p) => {
 
 const pair = Thunk(() => Pair(1, 2));
 console.log(Evaluate(Thunk(() => fst(pair))));
+
+const printInt = Fun((x) => {
+  return Case(x, {}, (n) => {
+    console.log(n);
+  });
+});
+const one = Thunk(() => Int(1));
+const main = Thunk(() => printInt(one));
+Evaluate(main);

@@ -1,4 +1,4 @@
-import { Fun, Thunk, Raw, Con, Case, Evaluate } from "./lazy.js";
+import { Fun, Thunk, Int, Con, Case, Evaluate } from "./lazy.js";
 
 const flip = Fun((f, x, y) => f(y, x));
 
@@ -8,14 +8,14 @@ const False = Con("False");
 const add = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n + m));
+      return Thunk(() => Int(n + m));
     });
   });
 });
 const sub = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n - m));
+      return Thunk(() => Int(n - m));
     });
   });
 });
@@ -44,7 +44,7 @@ const filter = Fun((f, xs) => {
   });
 });
 const enumFrom = Fun((x) => {
-  const one = Thunk(() => Raw(1));
+  const one = Thunk(() => Int(1));
   const y = Thunk(() => add(x, one));
   const xs = Thunk(() => enumFrom(y));
   return Cons(x, xs);
@@ -59,7 +59,7 @@ const take = Fun((n, xs) => {
       return Case(xs, {
         Nil: () => Nil,
         Cons: (x, xs) => {
-          const one = Thunk(() => Raw(1));
+          const one = Thunk(() => Int(1));
           const m = Thunk(() => sub(n, one));
           const ys = Thunk(() => take(m, xs));
           return Cons(x, ys);
@@ -76,7 +76,7 @@ const then = Fun((x, y) => {
   return Evaluate(y);
 });
 
-const printRaw = Fun((x) => {
+const printInt = Fun((x) => {
   return Case(x, {}, (n) => {
     console.log(n);
     return pure(Unit);
@@ -104,15 +104,15 @@ const primes = Thunk(() => {
       },
     });
   });
-  const two = Thunk(() => Raw(2));
+  const two = Thunk(() => Int(2));
   const fromTwo = Thunk(() => enumFrom(two));
   return filterPrime(fromTwo);
 });
 
 const main = Thunk(() => {
-  const n = Thunk(() => Raw(100));
+  const n = Thunk(() => Int(100));
   const fs = Thunk(() => take(n, primes));
-  return traverse_(printRaw, fs);
+  return traverse_(printInt, fs);
 });
 
 Evaluate(main);

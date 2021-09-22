@@ -1,4 +1,4 @@
-import { Fun, Thunk, Raw, Con, Case, Evaluate } from "./lazy.js";
+import { Fun, Thunk, Int, Con, Case, Evaluate } from "./lazy.js";
 
 const True = Con("True");
 const False = Con("False");
@@ -6,7 +6,7 @@ const False = Con("False");
 const sub = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n - m));
+      return Thunk(() => Int(n - m));
     });
   });
 });
@@ -18,9 +18,9 @@ const lte = Fun((x, y) => {
   });
 });
 
-const Unit = Thunk(() => Con("Unit"));
+const Unit = Con("Unit");
 const pure = Fun((x) => x);
-const printRaw = Fun((x) => {
+const printInt = Fun((x) => {
   return Case(x, {}, (n) => {
     console.log(n);
     return pure(Unit);
@@ -31,7 +31,7 @@ const tarai = Fun((x, y, z) => {
   return Case(lte(x, y), {
     True: () => y,
     False: () => {
-      const one = Thunk(() => Raw(1));
+      const one = Thunk(() => Int(1));
       const x1 = Thunk(() => sub(x, one));
       const t1 = Thunk(() => tarai(x1, y, z));
       const y1 = Thunk(() => sub(y, one));
@@ -44,15 +44,15 @@ const tarai = Fun((x, y, z) => {
 });
 
 const main = Thunk(() => {
-  const x = Thunk(() => Raw(15));
-  const y = Thunk(() => Raw(5));
-  const z = Thunk(() => Raw(0));
+  const x = Thunk(() => Int(15));
+  const y = Thunk(() => Int(5));
+  const z = Thunk(() => Int(0));
   const t = Thunk(() => tarai(x, y, z));
-  return printRaw(t);
+  return printInt(t);
 });
 
 console.log("lazy tarai");
-Evaluate(main);
+measure(() => Evaluate(main));
 
 function strictTarai(x, y, z) {
   if (x <= y) {
@@ -66,4 +66,11 @@ function strictTarai(x, y, z) {
 }
 
 console.log("strict tarai");
-console.log(strictTarai(15, 5, 0));
+measure(() => console.log(strictTarai(15, 5, 0)));
+
+function measure(f) {
+  const start = performance.now();
+  f();
+  const end = performance.now();
+  console.log(`took ${end - start}ms`);
+}

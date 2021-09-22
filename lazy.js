@@ -30,19 +30,6 @@ function Blackhole() {
   throw new Error("Blackhole");
 }
 
-export function Raw(value) {
-  return (alts, def) => {
-    const alt = alts[value];
-    if (alt) {
-      return alt();
-    }
-    if (def) {
-      return def(value);
-    }
-    throw new Error("No matched alternative");
-  };
-}
-
 export function Con(con, ...args) {
   return (alts, def) => {
     const alt = alts[con];
@@ -52,6 +39,19 @@ export function Con(con, ...args) {
     if (def) {
       const x = Thunk(() => Con(con, ...args));
       return def(x);
+    }
+    throw new Error("No matched alternative");
+  };
+}
+
+export function Int(n) {
+  return (alts, def) => {
+    const alt = alts[n];
+    if (alt) {
+      return alt();
+    }
+    if (def) {
+      return def(n);
     }
     throw new Error("No matched alternative");
   };

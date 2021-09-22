@@ -1,18 +1,18 @@
-import { Fun, Thunk, Raw, Con, Case, Evaluate } from "./lazy.js";
+import { Fun, Thunk, Int, Con, Case, Evaluate } from "./lazy.js";
 
-const zero = Thunk(() => Raw(0));
-const one = Thunk(() => Raw(1));
+const zero = Thunk(() => Int(0));
+const one = Thunk(() => Int(1));
 const add = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n + m));
+      return Thunk(() => Int(n + m));
     });
   });
 });
 const sub = Fun((x, y) => {
   return Case(x, {}, (n) => {
     return Case(y, {}, (m) => {
-      return Thunk(() => Raw(n - m));
+      return Thunk(() => Int(n - m));
     });
   });
 });
@@ -65,7 +65,7 @@ const then = Fun((x, y) => {
   return Evaluate(y);
 });
 
-const printRaw = Fun((x) => {
+const printInt = Fun((x) => {
   return Case(x, {}, (n) => {
     console.log(n);
     return pure(Unit);
@@ -90,9 +90,9 @@ const fibs = Thunk(() => {
 });
 
 const main = Thunk(() => {
-  const n = Thunk(() => Raw(100));
+  const n = Thunk(() => Int(100));
   const fs = Thunk(() => take(n, fibs));
-  return traverse_(printRaw, fs);
+  return traverse_(printInt, fs);
 });
 
 Evaluate(main);
