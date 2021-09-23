@@ -30,14 +30,14 @@ function Blackhole() {
   throw new Error("Blackhole");
 }
 
-export function Con(con, ...args) {
+export function Con(conName, ...args) {
   return (alts, def) => {
-    const alt = alts[con];
+    const alt = alts[conName];
     if (alt) {
       return alt(...args);
     }
     if (def) {
-      const x = Thunk(() => Con(con, ...args));
+      const x = Thunk(() => Con(conName, ...args));
       return def(x);
     }
     throw new Error("No matched alternative");
