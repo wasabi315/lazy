@@ -62,7 +62,7 @@ function Int(n) {
 }
 
 function Case(x, alts, def) {
-  // Pass alternatives to constructors and Int values
+  // Evaluated value will be a constructor so pass alternatives to it
   return Evaluate(x)(alts, def);
 }
 
