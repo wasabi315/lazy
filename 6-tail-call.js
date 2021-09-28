@@ -56,15 +56,16 @@ function ReturnFun(fun) {
 function ReturnCon(con, ...args) {
   return {
     exec(stacks) {
-      const rframe = stacks.ret.pop();
-      if (rframe) {
-        const alt = rframe.alts[con];
+      const alts = stacks.ret.pop();
+      if (alts) {
+        const alt = alts[con];
         if (alt) {
           return Eval(alt(...args));
         }
-        if (rframe.def) {
+        const def = alts.default;
+        if (def) {
           const x = Thunk(() => Con(con, ...args));
-          return Eval(rframe.def(x));
+          return Eval(def(x));
         }
         throw new Error("No matched alternatives");
       }
@@ -82,14 +83,15 @@ function ReturnCon(con, ...args) {
 function ReturnInt(n) {
   return {
     exec(stacks) {
-      const rframe = stacks.ret.pop();
-      if (rframe) {
-        const alt = rframe.alts[n];
+      const alts = stacks.ret.pop();
+      if (alts) {
+        const alt = alts[n];
         if (alt) {
           return Eval(alt());
         }
-        if (rframe.def) {
-          return Eval(rframe.def(n));
+        const def = alts.default;
+        if (def) {
+          return Eval(def(n));
         }
         throw new Error("No matched alternatives");
       }
@@ -123,10 +125,10 @@ const Blackhole = {
   },
 };
 
-export function Case(x, alts, def) {
+export function Case(x, alts) {
   return {
     eval(stacks) {
-      stacks.ret.push({ alts, def });
+      stacks.ret.push(alts);
       return Eval(x);
     },
   };
@@ -166,24 +168,21 @@ export function Int(n) {
 }
 
 const add = Fun((x, y) => {
-  return Case(x, {}, (n) => {
-    return Case(y, {}, (m) => {
-      return Int(n + m);
-    });
+  return Case(x, {
+    default: (n) => {
+      return Case(y, {
+        default: (m) => Int(n + m),
+      });
+    },
   });
 });
 const sub = Fun((x, y) => {
-  return Case(x, {}, (n) => {
-    return Case(y, {}, (m) => {
-      return Int(n - m);
-    });
-  });
-});
-const mul = Fun((x, y) => {
-  return Case(x, {}, (n) => {
-    return Case(y, {}, (m) => {
-      return Int(n * m);
-    });
+  return Case(x, {
+    default: (n) => {
+      return Case(y, {
+        default: (m) => Int(n - m),
+      });
+    },
   });
 });
 
@@ -195,12 +194,9 @@ const tail = Fun((xs) => {
   });
 });
 const take = Fun((n, xs) => {
-  return Case(
-    n,
-    {
-      [0]: () => Nil,
-    },
-    () => {
+  return Case(n, {
+    [0]: () => Nil,
+    default: () => {
       return Case(xs, {
         Nil: () => Nil,
         Cons: (x, xs) => {
@@ -209,8 +205,8 @@ const take = Fun((n, xs) => {
           return Cons(x, tmxs);
         },
       });
-    }
-  );
+    },
+  });
 });
 const zipWith = Fun((f, xs, ys) => {
   return Case(xs, {
@@ -230,8 +226,12 @@ const zipWith = Fun((f, xs, ys) => {
 
 const Unit = Con("Unit");
 const then = Fun((x, y) => {
-  return Case(x, {}, () => {
-    return Case(y, {}, (y) => y);
+  return Case(x, {
+    default: () => {
+      return Case(y, {
+        default: (y) => y,
+      });
+    },
   });
 });
 const traverse_ = Fun((f, xs) => {
@@ -245,9 +245,11 @@ const traverse_ = Fun((f, xs) => {
   });
 });
 const printInt = Fun((x) => {
-  return Case(x, {}, (n) => {
-    console.log(n);
-    return Unit;
+  return Case(x, {
+    default: (n) => {
+      console.log(n);
+      return Unit;
+    },
   });
 });
 
@@ -257,25 +259,6 @@ const fibs = Thunk(() => {
   const zs = Thunk(() => Cons(Int(1), ys));
   return Cons(Int(0), zs);
 });
-
-const fix = Fun((f) => {
-  const x = Thunk(() => App(f, x));
-  return x;
-});
-const fact_ = Fun((f, n) => {
-  return Case(
-    n,
-    {
-      [0]: () => Int(1),
-    },
-    () => {
-      const m = Thunk(() => App(sub, n, Int(1)));
-      const fm = Thunk(() => App(f, m));
-      return App(mul, n, fm);
-    }
-  );
-});
-const fact = Thunk(() => App(fix, fact_));
 
 const main = Thunk(() => {
   const n = Thunk(() => Int(100));
