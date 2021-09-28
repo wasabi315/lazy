@@ -46,7 +46,7 @@ function ReturnFun(fun) {
       if (uframe) {
         stacks.ret = uframe.ret;
         stacks.call = uframe.call;
-        uframe.addr.eval = Fun(fun).eval;
+        uframe.target.eval = Fun(fun).eval;
         return ReturnFun(fun);
       }
     },
@@ -72,7 +72,7 @@ function ReturnCon(con, ...args) {
       if (uframe) {
         stacks.ret = uframe.ret;
         stacks.call = uframe.call;
-        uframe.addr.eval = Con(con, ...args).eval;
+        uframe.target.eval = Con(con, ...args).eval;
         return ReturnCon(con, ...args);
       }
     },
@@ -97,7 +97,7 @@ function ReturnInt(n) {
       if (uframe) {
         stacks.ret = uframe.ret;
         stacks.call = uframe.call;
-        uframe.addr.eval = Int(n).eval;
+        uframe.target.eval = Int(n).eval;
         return ReturnInt(n);
       }
     },
@@ -108,7 +108,7 @@ export function Thunk(expr) {
   const self = {
     eval(stacks) {
       self.eval = Blackhole.eval;
-      stacks.upd.push({ addr: self, ret: stacks.ret, call: stacks.call });
+      stacks.upd.push({ target: self, ret: stacks.ret, call: stacks.call });
       stacks.call = [];
       stacks.ret = [];
       return Eval(expr());
@@ -118,7 +118,7 @@ export function Thunk(expr) {
 }
 
 const Blackhole = {
-  eval() {
+  eval(_stacks) {
     throw new Error("Blackhole");
   },
 };
