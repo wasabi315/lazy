@@ -1,6 +1,6 @@
 export function Evaluate(expr) {
   const stacks = {
-    call: [],
+    args: [],
     ret: [],
     upd: [],
   };
@@ -36,7 +36,7 @@ function Call(fun, ...args) {
         Object.defineProperty(pap, "length", { value: arity - nargs });
         return Eval(Fun(pap));
       }
-      stacks.call.push((f) => Call(f, ...args.slice(arity)));
+      stacks.args.push(args.slice(arity));
       return Eval(fun(...args.slice(0, arity)));
     },
   };
@@ -45,14 +45,14 @@ function Call(fun, ...args) {
 function ReturnFun(fun) {
   return {
     exec(stacks) {
-      const callCont = stacks.call.pop();
-      if (callCont) {
-        return callCont(fun);
+      const args = stacks.args.pop();
+      if (args) {
+        return Call(fun, ...args);
       }
       const uframe = stacks.upd.pop();
       if (uframe) {
         stacks.ret = uframe.ret;
-        stacks.call = uframe.call;
+        stacks.args = uframe.args;
         uframe.target.eval = Fun(fun).eval;
         return ReturnFun(fun);
       }
@@ -79,7 +79,7 @@ function ReturnCon(con, ...args) {
       const uframe = stacks.upd.pop();
       if (uframe) {
         stacks.ret = uframe.ret;
-        stacks.call = uframe.call;
+        stacks.args = uframe.args;
         uframe.target.eval = Con(con, ...args).eval;
         return ReturnCon(con, ...args);
       }
@@ -105,7 +105,7 @@ function ReturnInt(n) {
       const uframe = stacks.upd.pop();
       if (uframe) {
         stacks.ret = uframe.ret;
-        stacks.call = uframe.call;
+        stacks.args = uframe.args;
         uframe.target.eval = () => ReturnInt(n);
         return ReturnInt(n);
       }
@@ -121,8 +121,8 @@ export function Thunk(expr) {
     self.eval = () => {
       throw new Error("Blackhole");
     };
-    stacks.upd.push({ target: self, ret: stacks.ret, call: stacks.call });
-    stacks.call = [];
+    stacks.upd.push({ target: self, ret: stacks.ret, args: stacks.args });
+    stacks.args = [];
     stacks.ret = [];
     return Eval(expr());
   };
@@ -144,7 +144,7 @@ export function Case(x, alts) {
 export function App(fun, ...args) {
   return {
     eval(stacks) {
-      stacks.call.push((f) => Call(f, ...args));
+      stacks.args.push(args);
       return Eval(fun);
     },
   };
