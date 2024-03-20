@@ -6,7 +6,7 @@ import {
   take,
   Cons,
   map,
-  forceList,
+  rnfList,
   traceInt,
 } from "../prelude.js";
 
@@ -20,7 +20,7 @@ const fibs = Thunk(() => {
 const main = Thunk(() => {
   const xs = Thunk(() => take(1000, fibs));
   const ys = Thunk(() => map(traceInt, xs));
-  return forceList(ys);
+  return rnfList(ys);
 });
 
 Evaluate(main);

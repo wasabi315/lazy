@@ -160,13 +160,12 @@ export const enumFrom = Fun((n) => {
 
 // force
 export const seq = Fun((x, y) => Case(x, { default: () => y }));
-export const deepseqList = Fun((xs, y) =>
+export const rnfList = Fun((xs) =>
   Case(xs, {
-    Nil: () => y,
+    Nil: () => Unit,
     Cons: (x, xs) => {
-      const z = Thunk(() => deepseqList(xs, y));
-      return seq(x, z);
+      const y = Thunk(() => rnfList(xs));
+      return seq(x, y);
     },
   })
 );
-export const forceList = Fun((xs) => deepseqList(xs, xs));

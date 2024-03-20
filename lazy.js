@@ -5,12 +5,18 @@ export function Evaluate(expr) {
     upd: [],
   };
   let code = Eval(expr);
-  while ((code = code.exec(stacks)));
+  try {
+    while ((code = code.exec(stacks)));
+  } catch (err) {
+    throw new Error("Evaluation error", { cause: err });
+  }
 }
+
+/******************************************************************************/
+// Codes
 
 function Eval(expr) {
   return {
-    toString: () => "Eval",
     exec(stacks) {
       return expr.eval(stacks);
     },
@@ -19,7 +25,6 @@ function Eval(expr) {
 
 function Call(fun, ...args) {
   return {
-    toString: () => "Call",
     exec(stacks) {
       const arity = fun.length;
       const nargs = args.length;
@@ -27,7 +32,7 @@ function Call(fun, ...args) {
         return Eval(fun(...args));
       }
       if (arity > nargs) {
-        const pap = (...args2) => Fun(fun)(...args, ...args2);
+        const pap = (...args2) => App(Fun(fun), ...args, ...args2);
         Object.defineProperty(pap, "length", { value: arity - nargs });
         return Eval(Fun(pap));
       }
@@ -39,7 +44,6 @@ function Call(fun, ...args) {
 
 function ReturnFun(fun) {
   return {
-    toString: () => "ReturnFun",
     exec(stacks) {
       const callCont = stacks.call.pop();
       if (callCont) {
@@ -58,7 +62,6 @@ function ReturnFun(fun) {
 
 function ReturnCon(con, ...args) {
   return {
-    toString: () => "ReturnCon",
     exec(stacks) {
       const alts = stacks.ret.pop();
       if (alts) {
@@ -86,7 +89,6 @@ function ReturnCon(con, ...args) {
 
 function ReturnInt(n) {
   return {
-    toString: () => "ReturnInt",
     exec(stacks) {
       const alts = stacks.ret.pop();
       if (alts) {
@@ -111,10 +113,10 @@ function ReturnInt(n) {
   };
 }
 
+/******************************************************************************/
+// Terms: things that can be evaluated
+
 export function Thunk(expr) {
-  function self(...args) {
-    return App(self, ...args);
-  }
   self.eval = (stacks) => {
     self.eval = () => {
       throw new Error("Blackhole");
@@ -124,6 +126,9 @@ export function Thunk(expr) {
     stacks.ret = [];
     return Eval(expr());
   };
+  function self(...args) {
+    return App(self, ...args);
+  }
   return self;
 }
 
@@ -146,10 +151,10 @@ export function App(fun, ...args) {
 }
 
 export function Fun(fun) {
+  self.eval = (_stacks) => ReturnFun(fun);
   function self(...args) {
     return App(self, ...args);
   }
-  self.eval = (_stacks) => ReturnFun(fun);
   return self;
 }
 
