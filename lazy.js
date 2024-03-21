@@ -78,6 +78,12 @@ if (!Number.prototype.eval) {
   };
 }
 
+if (!BigInt.prototype.eval) {
+  BigInt.prototype.eval = function (_stacks) {
+    return ReturnInt(this.valueOf());
+  };
+}
+
 // Corresponds to the `let` construct in STG
 export function Thunk(expr) {
   // This is going to be replaced with the result after the first evaluation (memoization)

@@ -13,12 +13,12 @@ import {
 const fibs = Thunk(() => {
   const xs = Thunk(() => tail(fibs));
   const ys = Thunk(() => zipWith(add, fibs, xs));
-  const zs = Thunk(() => Cons(1, ys));
-  return Cons(0, zs);
+  const zs = Thunk(() => Cons(1n, ys));
+  return Cons(0n, zs);
 });
 
 const main = Thunk(() => {
-  const xs = Thunk(() => take(1000, fibs));
+  const xs = Thunk(() => take(200, fibs));
   const ys = Thunk(() => map(traceInt, xs));
   return rnfList(ys);
 });
