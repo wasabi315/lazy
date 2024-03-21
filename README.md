@@ -1,6 +1,6 @@
 # lazy.js
 
-STG-like lazy evaluation mechanism in JavaScript
+A STG-like lazy evaluation mechanism in JavaScript
 
 ```javascript
 // fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
