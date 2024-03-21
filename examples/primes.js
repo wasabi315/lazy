@@ -26,7 +26,7 @@ const primes = Thunk(() => {
 });
 
 const main = Thunk(() => {
-  const ns = Thunk(() => take(3000, primes));
+  const ns = Thunk(() => take(2000, primes));
   const ms = Thunk(() => map(traceInt, ns));
   return rnfList(ms);
 });
