@@ -51,9 +51,8 @@ function ReturnFun(fun) {
       }
       const uframe = stacks.upd.pop();
       if (uframe) {
-        stacks.ret = uframe.ret;
-        stacks.args = uframe.args;
-        uframe.target.eval = Fun(fun).eval;
+        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+        Object.assign(uframe.target, Fun(fun));
         return ReturnFun(fun);
       }
     },
@@ -78,9 +77,8 @@ function ReturnCon(con, ...args) {
       }
       const uframe = stacks.upd.pop();
       if (uframe) {
-        stacks.ret = uframe.ret;
-        stacks.args = uframe.args;
-        uframe.target.eval = Con(con, ...args).eval;
+        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+        Object.assign(uframe.target, Con(con, ...args));
         return ReturnCon(con, ...args);
       }
     },
@@ -104,9 +102,8 @@ function ReturnInt(n) {
       }
       const uframe = stacks.upd.pop();
       if (uframe) {
-        stacks.ret = uframe.ret;
-        stacks.args = uframe.args;
-        uframe.target.eval = () => ReturnInt(n);
+        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+        Object.assign(uframe.target, Int(n));
         return ReturnInt(n);
       }
     },
@@ -114,7 +111,7 @@ function ReturnInt(n) {
 }
 
 /******************************************************************************/
-// Terms: things that can be evaluated
+// Expressions: things that can be evaluated
 
 export function Thunk(expr) {
   self.eval = (stacks) => {
@@ -162,6 +159,14 @@ export function Con(con, ...args) {
   return {
     eval(_stacks) {
       return ReturnCon(con, ...args);
+    },
+  };
+}
+
+export function Int(n) {
+  return {
+    eval(_stacks) {
+      return ReturnInt(n);
     },
   };
 }
