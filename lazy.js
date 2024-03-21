@@ -178,8 +178,7 @@ function ReturnCon(con, ...args) {
         }
         const def = alts.default;
         if (def) {
-          const x = Thunk(() => Con(con, ...args));
-          return Eval(def(x));
+          return Eval(def(Con(con, ...args)));
         }
         throw new Error("No matched alternatives");
       }
