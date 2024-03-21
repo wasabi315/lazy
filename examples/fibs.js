@@ -3,7 +3,6 @@ import {
   zipWith,
   add,
   tail,
-  take,
   Cons,
   map,
   rnfList,
@@ -18,9 +17,8 @@ const fibs = Thunk(() => {
 });
 
 const main = Thunk(() => {
-  const xs = Thunk(() => take(200, fibs));
-  const ys = Thunk(() => map(traceInt, xs));
-  return rnfList(ys);
+  const ns = Thunk(() => map(traceInt, fibs));
+  return rnfList(ns);
 });
 
 Evaluate(main);
