@@ -3,9 +3,9 @@ import { fix, mul, traceInt } from "../prelude.js";
 
 const factBody = Fun((f, n) =>
   Case(n, {
-    [0]: () => 1,
+    [0n]: () => 1n,
     default: (n) => {
-      const fm = Thunk(() => f(n - 1));
+      const fm = Thunk(() => f(n - 1n));
       return mul(n, fm);
     },
   })
@@ -13,7 +13,7 @@ const factBody = Fun((f, n) =>
 const fact = Thunk(() => fix(factBody));
 
 const main = Thunk(() => {
-  const factN = Thunk(() => fact(10));
+  const factN = Thunk(() => fact(1000n));
   return traceInt(factN);
 });
 

@@ -1,15 +1,12 @@
 // This is the entry point for the lazy evaluation engine
 export function Evaluate(expr) {
-  const stacks = {
-    args: [],
-    ret: [],
-    upd: [],
-  };
-  let code = Eval(expr);
-  try {
-    while ((code = code.exec(stacks)));
-  } catch (err) {
-    throw new Error("Evaluation error", { cause: err });
+  for (const _ of EvaluateGen(expr));
+}
+
+export function* EvaluateGen(expr) {
+  const stacks = { args: [], ret: [], upd: [] };
+  for (let code = Eval(expr); code; code = code.exec(stacks)) {
+    yield code;
   }
 }
 
@@ -138,8 +135,8 @@ function Call(fun, ...args) {
         // Create a partial application object
         const pap = (...args2) => App(Fun(fun), ...args, ...args2);
         Object.defineProperty(pap, "length", { value: arity - nargs });
-        // Evaluate the partial application, which may lead to further applications
-        return Eval(Fun(pap));
+        // ReturnFun, which may lead to further applications or thunk updates
+        return ReturnFun(pap);
       }
       // Over-saturated application
       // Push the remaining arguments to the stack
