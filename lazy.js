@@ -5,8 +5,8 @@ export function Evaluate(expr) {
 
 export function* EvaluateGen(expr) {
   const stacks = { args: [], ret: [], upd: [] };
-  for (let code = Eval(expr); code; code = code.exec(stacks)) {
-    yield code;
+  for (let code = Eval(expr); code; code = code(stacks)) {
+    yield;
   }
 }
 
@@ -106,110 +106,100 @@ const Blackhole = {
 
 // Evaluate an expression
 function Eval(expr) {
-  return {
-    // Just delegate to the eval method of the expression
-    exec: expr.eval.bind(expr),
-  };
+  // Just delegate to the eval method of the expression
+  return expr.eval.bind(expr);
 }
 
 // Call a function with arguments
 function Call(fun, ...args) {
-  return {
-    exec(stacks) {
-      const arity = fun.length;
-      const nargs = args.length;
-      // Exact application
-      if (arity === nargs) {
-        return Eval(fun(...args));
-      }
-      // Partial application
-      if (arity > nargs) {
-        // Create a partial application object
-        const pap = Fun(fun).bind(null, ...args);
-        Object.defineProperty(pap, "length", { value: arity - nargs });
-        // ReturnFun, which may lead to further applications or thunk updates
-        return ReturnFun(pap);
-      }
-      // Over-saturated application
-      // Push the remaining arguments to the stack
-      stacks.args.push(args.slice(arity));
-      return Eval(fun(...args.slice(0, arity)));
-    },
+  return (stacks) => {
+    const arity = fun.length;
+    const nargs = args.length;
+    // Exact application
+    if (arity === nargs) {
+      return Eval(fun(...args));
+    }
+    // Partial application
+    if (arity > nargs) {
+      // Create a partial application object
+      const pap = Fun(fun).bind(null, ...args);
+      Object.defineProperty(pap, "length", { value: arity - nargs });
+      // ReturnFun, which may lead to further applications or thunk updates
+      return ReturnFun(pap);
+    }
+    // Over-saturated application
+    // Push the remaining arguments to the stack
+    stacks.args.push(args.slice(arity));
+    return Eval(fun(...args.slice(0, arity)));
   };
 }
 
 // Apply a function to the arguments on the stack
 function ReturnFun(fun) {
-  return {
-    exec(stacks) {
-      const args = stacks.args.pop();
-      if (args) {
-        // Actually apply the function to the arguments
-        return Call(fun, ...args);
-      }
-      // An empty argument stack means that the function is the evaluation result of a thunk
-      // So update the thunk on the stack with the function
-      const uframe = stacks.upd.pop();
-      if (uframe) {
-        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
-        Object.assign(uframe.target, Fun(fun));
-        return ReturnFun(fun);
-      }
-    },
+  return (stacks) => {
+    const args = stacks.args.pop();
+    if (args) {
+      // Actually apply the function to the arguments
+      return Call(fun, ...args);
+    }
+    // An empty argument stack means that the function is the evaluation result of a thunk
+    // So update the thunk on the stack with the function
+    const uframe = stacks.upd.pop();
+    if (uframe) {
+      [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+      Object.assign(uframe.target, Fun(fun));
+      return ReturnFun(fun);
+    }
   };
 }
 
 // Jump to one of the alternatives on the stack
 function ReturnCon(con, ...args) {
-  return {
-    exec(stacks) {
-      // Pop the alternatives from the stack
-      const alts = stacks.ret.pop();
-      if (alts) {
-        // Jump to the alternative that matches the constructor
-        const alt = alts[con];
-        if (alt) {
-          return Eval(alt(...args));
-        }
-        const def = alts.default;
-        if (def) {
-          return Eval(def(Con(con, ...args)));
-        }
-        throw new Error("No matched alternatives");
+  return (stacks) => {
+    // Pop the alternatives from the stack
+    const alts = stacks.ret.pop();
+    if (alts) {
+      // Jump to the alternative that matches the constructor
+      const alt = alts[con];
+      if (alt) {
+        return Eval(alt(...args));
       }
-      // Like ReturnFun, update the thunk on the stack with the constructor application
-      const uframe = stacks.upd.pop();
-      if (uframe) {
-        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
-        Object.assign(uframe.target, Con(con, ...args));
-        return ReturnCon(con, ...args);
+      const def = alts.default;
+      if (def) {
+        return Eval(def(Con(con, ...args)));
       }
-    },
+      throw new Error("No matched alternatives");
+    }
+    // Like ReturnFun, update the thunk on the stack with the constructor application
+    const uframe = stacks.upd.pop();
+    if (uframe) {
+      [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+      Object.assign(uframe.target, Con(con, ...args));
+      return ReturnCon(con, ...args);
+    }
   };
 }
 
 // Almost the same as ReturnCon
 function ReturnInt(n) {
-  return {
-    exec(stacks) {
-      const alts = stacks.ret.pop();
-      if (alts) {
-        const alt = alts[n];
-        if (alt) {
-          return Eval(alt());
-        }
-        const def = alts.default;
-        if (def) {
-          return Eval(def(n));
-        }
-        throw new Error("No matched alternatives");
+  return (stacks) => {
+    const alts = stacks.ret.pop();
+    if (alts) {
+      const alt = alts[n];
+      if (alt) {
+        return Eval(alt());
       }
-      const uframe = stacks.upd.pop();
-      if (uframe) {
-        [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
-        Object.assign(uframe.target, Int(n));
-        return ReturnInt(n);
+      const def = alts.default;
+      if (def) {
+        return Eval(def(n));
       }
-    },
+      throw new Error("No matched alternatives");
+    }
+    const uframe = stacks.upd.pop();
+    if (uframe) {
+      [stacks.ret, stacks.args] = [uframe.ret, uframe.args];
+      Object.assign(uframe.target, Int(n));
+      return ReturnInt(n);
+    }
   };
 }
