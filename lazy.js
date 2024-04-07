@@ -30,7 +30,7 @@ export function App(fun, ...args) {
 
 export function Fun(fun) {
   // Go apply the function to the arguments on the stack
-  self.eval = (_stacks) => ReturnFun(fun);
+  self.eval = ReturnFun.bind(null, fun);
   // Shorthand for function application
   // Without this, one would always have to write `App(Fun(f), ...args)`
   function self(...args) {
@@ -53,19 +53,14 @@ export function Case(x, alts) {
 // Saturated constructor application
 export function Con(con, ...args) {
   return {
-    eval(_stacks) {
-      // Go jump to one of the alternatives on the stack
-      return ReturnCon(con, ...args);
-    },
+    // Go jump to one of the alternatives on the stack
+    eval: ReturnCon.bind(null, con, ...args),
   };
 }
 
 export function Int(n) {
   return {
-    eval(_stacks) {
-      // Almost the same as Con
-      return ReturnInt(n);
-    },
+    eval: ReturnInt.bind(null, n),
   };
 }
 
@@ -89,8 +84,7 @@ export function Thunk(expr) {
     Object.assign(self, Blackhole);
     // Push a new update frame to the stack
     stacks.upd.push({ target: self, ret: stacks.ret, args: stacks.args });
-    stacks.args = [];
-    stacks.ret = [];
+    stacks.args = stacks.ret = [];
     // Go evaluate the expression
     return Eval(expr());
   };
@@ -113,10 +107,8 @@ const Blackhole = {
 // Evaluate an expression
 function Eval(expr) {
   return {
-    exec(stacks) {
-      // Just delegate to the eval method of the expression
-      return expr.eval(stacks);
-    },
+    // Just delegate to the eval method of the expression
+    exec: expr.eval.bind(expr),
   };
 }
 
@@ -133,7 +125,7 @@ function Call(fun, ...args) {
       // Partial application
       if (arity > nargs) {
         // Create a partial application object
-        const pap = (...args2) => App(Fun(fun), ...args, ...args2);
+        const pap = Fun(fun).bind(null, ...args);
         Object.defineProperty(pap, "length", { value: arity - nargs });
         // ReturnFun, which may lead to further applications or thunk updates
         return ReturnFun(pap);
