@@ -19,6 +19,11 @@ export const ifThenElse = Fun((b, t, f) =>
   })
 );
 
+// Pair
+export const Pair = (x, y) => Con("Pair", x, y);
+export const fst = Fun((p) => Case(p, { Pair: (x, _) => x }));
+export const snd = Fun((p) => Case(p, { Pair: (_, x) => x }));
+
 // trace
 export const traceInt = Fun((x) =>
   Case(x, {
@@ -91,6 +96,14 @@ export const lte = Fun((x, y) =>
     default: (n) =>
       Case(y, {
         default: (m) => (n <= m ? True : False),
+      }),
+  })
+);
+export const min = Fun((x, y) =>
+  Case(x, {
+    default: (m) =>
+      Case(y, {
+        default: (n) => (m < n ? m : n),
       }),
   })
 );
