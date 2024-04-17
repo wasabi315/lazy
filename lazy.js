@@ -58,6 +58,13 @@ export function Con(con, ...args) {
   };
 }
 
+// Tuple is a special constructor for tuples
+export const TUPLE = Symbol("TUPLE");
+export function Tuple(...args) {
+  return Con(TUPLE, ...args);
+}
+Tuple.toString = () => TUPLE;
+
 export function Int(n) {
   return {
     eval: ReturnInt.bind(null, n),
@@ -92,6 +99,12 @@ export function Thunk(expr) {
   function self(...args) {
     return App(self, ...args);
   }
+  // This allows to destructure tuples directly, like let (x, y) = someTuple in ...
+  self[Symbol.iterator] = function* () {
+    for (let i = 0; ; i++) {
+      yield Thunk(() => Case(self, { [Tuple]: (...args) => args[i] }));
+    }
+  };
   return self;
 }
 
