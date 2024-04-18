@@ -1,4 +1,4 @@
-import { Fun, Case, Thunk, Con, Tuple } from "./lazy.js";
+import { Fun, Case, Thunk, Con } from "./lazy.js";
 
 // Unit
 export const Unit = Con("Unit");
@@ -19,9 +19,10 @@ export const ifThenElse = Fun((b, t, f) =>
   })
 );
 
-// Tuple
-export const fst = Fun((p) => Case(p, { [Tuple]: (x, _) => x }));
-export const snd = Fun((p) => Case(p, { [Tuple]: (_, y) => y }));
+// Pair
+export const Pair = (x, y) => Con("Pair", x, y);
+export const fst = Fun((p) => Case(p, { Pair: (x, _) => x }));
+export const snd = Fun((p) => Case(p, { Pair: (_, y) => y }));
 
 // trace
 export const traceInt = Fun((x) =>
