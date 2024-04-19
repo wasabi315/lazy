@@ -30,9 +30,9 @@ export function App(fun, ...args) {
 
 export function Fun(fun) {
   // Go apply the function to the arguments on the stack
-  self.eval = ReturnFun.bind(null, fun);
+  self.eval = (_stacks) => ReturnFun(fun);
   // Shorthand for function application
-  // Without this, one would always have to write `App(Fun(f), ...args)`
+  // Without this, one would have to write `App(Fun(f), ...args)`
   function self(...args) {
     return App(self, ...args);
   }
@@ -54,13 +54,13 @@ export function Case(x, alts) {
 export function Con(con, ...args) {
   return {
     // Go jump to one of the alternatives on the stack
-    eval: ReturnCon.bind(null, con, ...args),
+    eval: (_stacks) => ReturnCon(con, ...args),
   };
 }
 
 export function Int(n) {
   return {
-    eval: ReturnInt.bind(null, n),
+    eval: (_stacks) => ReturnInt(n),
   };
 }
 
@@ -84,7 +84,7 @@ export function Thunk(expr) {
     Object.assign(self, Blackhole);
     // Push a new update frame to the stack
     stacks.upd.push({ target: self, ret: stacks.ret, args: stacks.args });
-    stacks.args = stacks.ret = [];
+    [stacks.args, stacks.ret] = [[], []];
     // Go evaluate the expression
     return Eval(expr());
   };
@@ -207,7 +207,7 @@ function ReturnInt(n) {
       if (def) {
         return Eval(def(n));
       }
-      throw new Error("No matched alternatives");
+      throw new Error(`No matched alternatives for ${n}`);
     }
     const uframe = stacks.upd.pop();
     if (uframe) {
