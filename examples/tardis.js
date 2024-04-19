@@ -13,15 +13,12 @@ const pure = Fun((x, s) => Pair(x, s));
     return (x', (bw'', fw''))
  */
 const bind = Fun((m, f, [bw, fw]) => {
-  const [[x, [bw2, fw1]], [y, [bw1, fw2]]] = Thunk(() => {
-    const s1 = Thunk(() => Pair(bw1, fw));
-    const m1 = Thunk(() => m(s1));
-    const s2 = Thunk(() => Pair(bw, fw1));
-    const m2 = Thunk(() => f(x, s2));
-    return Pair(m1, m2);
-  });
-  const s = Thunk(() => Pair(bw2, fw2));
-  return Pair(y, s);
+  const s1 = Thunk(() => Pair(bw1, fw));
+  const [x, [bw2, fw1]] = Thunk(() => m(s1));
+  const s2 = Thunk(() => Pair(bw, fw1));
+  const [y, [bw1, fw2]] = Thunk(() => f(x, s2));
+  const s3 = Thunk(() => Pair(bw2, fw2));
+  return Pair(y, s3);
 });
 
 const TardisMonad = DoBuilder({ pure, bind });
