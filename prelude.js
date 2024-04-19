@@ -187,3 +187,20 @@ export const rnfList = Fun((xs) =>
 export const undef = Thunk(() => {
   throw new Error("undef");
 });
+
+// Qualified Do
+export function DoBuilder({ pure, bind }) {
+  function aux(it, prev) {
+    const { done, value } = it.next(prev);
+    if (done) {
+      return pure(value ?? prev);
+    }
+    const k = Fun((x) => aux(it, x));
+    return bind(value, k);
+  }
+  return {
+    Do(gen) {
+      return Thunk(() => aux(gen()));
+    },
+  };
+}
