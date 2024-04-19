@@ -182,3 +182,8 @@ export const rnfList = Fun((xs) =>
     },
   })
 );
+
+// undefined
+export const undef = Thunk(() => {
+  throw new Error("undef");
+});
