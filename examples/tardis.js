@@ -50,9 +50,8 @@ const noState = Thunk(() => Pair(undef, undef));
 // sendFuture 1 >>= \_ -> getPast
 const ex1 = Thunk(() => {
   const m = TardisMonad.Do(function* () {
-    const _ = yield Thunk(() => sendFuture(1));
-    const x = yield Thunk(() => getPast);
-    return x;
+    yield Thunk(() => sendFuture(1));
+    yield Thunk(() => getPast);
   });
   const [x, [_, fw]] = Thunk(() => m(noState));
   const t1 = Thunk(() => traceInt(x));
@@ -66,7 +65,7 @@ Evaluate(ex1);
 const ex2 = Thunk(() => {
   const m = TardisMonad.Do(function* () {
     const x = yield Thunk(() => getFuture);
-    const _ = yield Thunk(() => sendPast(2));
+    yield Thunk(() => sendPast(2));
     return x;
   });
   const [x, [bw, _]] = Thunk(() => m(noState));
