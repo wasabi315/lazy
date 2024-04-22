@@ -1,5 +1,5 @@
 import { Case, Con, Evaluate, Fun, Thunk } from "../lazy.js";
-import { traceInt, Unit, seq, Pair, fst, snd, min } from "../prelude.js";
+import { traceInt, Unit, seq, Pair, min } from "../prelude.js";
 
 const Leaf = (n) => Con("Leaf", n);
 const Branch = (l, r) => Con("Branch", l, r);
@@ -20,12 +20,8 @@ const repminAux = Fun((m, t) =>
       return Pair(n, leaf);
     },
     Branch: (l, r) => {
-      const res1 = Thunk(() => repminAux(m, l));
-      const m1 = Thunk(() => fst(res1));
-      const t1 = Thunk(() => snd(res1));
-      const res2 = Thunk(() => repminAux(m, r));
-      const m2 = Thunk(() => fst(res2));
-      const t2 = Thunk(() => snd(res2));
+      const [m1, t1] = Thunk(() => repminAux(m, l));
+      const [m2, t2] = Thunk(() => repminAux(m, r));
       const m3 = Thunk(() => min(m1, m2));
       const t3 = Thunk(() => Branch(t1, t2));
       return Pair(m3, t3);
