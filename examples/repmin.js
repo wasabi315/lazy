@@ -1,17 +1,22 @@
 import { Case, Con, Evaluate, Fun, Thunk } from "../lazy.js";
-import { traceInt, Unit, seq, Pair, min } from "../prelude.js";
+import { Pair, min, IO, printInt, runIO } from "../prelude.js";
 
 const Leaf = (n) => Con("Leaf", n);
 const Branch = (l, r) => Con("Branch", l, r);
-const traceTree = Fun((t) =>
-  Case(t, {
-    Leaf: (n) => traceInt(n),
-    Branch: (l, r) => {
-      const s = Thunk(() => seq(traceTree(r), Unit));
-      return seq(traceTree(l), s);
-    },
-  })
-);
+const traverseTree_ = (monad) =>
+  Fun((f, t) => {
+    return Case(t, {
+      Leaf: (n) =>
+        monad.Do(function* () {
+          yield Thunk(() => f(n));
+        }),
+      Branch: (l, r) =>
+        monad.Do(function* () {
+          yield Thunk(() => traverseTree_(monad)(f, l));
+          yield Thunk(() => traverseTree_(monad)(f, r));
+        }),
+    });
+  });
 
 const repminAux = Fun((m, t) =>
   Case(t, {
@@ -44,12 +49,10 @@ const tree1 = Thunk(() => {
   return Branch(branch1, branch2);
 });
 
-const main = Thunk(() => {
-  const t1 = Thunk(() => traceTree(tree1));
+const main = IO.Do(function* () {
+  yield Thunk(() => traverseTree_(IO)(printInt, tree1));
   const tree2 = Thunk(() => repmin(tree1));
-  const t2 = Thunk(() => traceTree(tree2));
-  const s = Thunk(() => seq(t2, Unit));
-  return seq(t1, s);
+  yield Thunk(() => traverseTree_(IO)(printInt, tree2));
 });
 
-Evaluate(main);
+Evaluate(runIO(main));

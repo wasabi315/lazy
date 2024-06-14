@@ -1,5 +1,5 @@
 import { Fun, Thunk, Case, Evaluate } from "../lazy.js";
-import { fix, mul, traceInt } from "../prelude.js";
+import { fix, mul, printInt, runIO } from "../prelude.js";
 
 const factBody = Fun((f, n) =>
   Case(n, {
@@ -14,7 +14,7 @@ const fact = Thunk(() => fix(factBody));
 
 const main = Thunk(() => {
   const factN = Thunk(() => fact(1000n));
-  return traceInt(factN);
+  return printInt(factN);
 });
 
-Evaluate(main);
+Evaluate(runIO(main));

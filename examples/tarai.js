@@ -1,5 +1,5 @@
 import { Thunk, Case, Fun, Evaluate } from "../lazy.js";
-import { lte, sub, traceInt } from "../prelude.js";
+import { lte, sub, runIO, printInt } from "../prelude.js";
 
 const tarai = Fun((x, y, z) =>
   Case(lte(x, y), {
@@ -18,11 +18,11 @@ const tarai = Fun((x, y, z) =>
 
 const main = Thunk(() => {
   const t = Thunk(() => tarai(15, 5, 0));
-  return traceInt(t);
+  return printInt(t);
 });
 
 console.log("lazy tarai");
-measure(() => Evaluate(main));
+measure(() => Evaluate(runIO(main)));
 
 function strictTarai(x, y, z) {
   if (x <= y) {

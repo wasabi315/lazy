@@ -2,12 +2,13 @@ import { Fun, Thunk, Case, Evaluate } from "../lazy.js";
 import {
   filter,
   doesNotdivide,
-  rnfList,
-  map,
-  traceInt,
   take,
   enumFrom,
   Cons,
+  traverseList_,
+  IO,
+  runIO,
+  printInt,
 } from "../prelude.js";
 
 const filterPrime = Fun((xs) => {
@@ -27,8 +28,7 @@ const primes = Thunk(() => {
 
 const main = Thunk(() => {
   const ns = Thunk(() => take(2000, primes));
-  const ms = Thunk(() => map(traceInt, ns));
-  return rnfList(ms);
+  return traverseList_(IO)(printInt, ns);
 });
 
-Evaluate(main);
+Evaluate(runIO(main));

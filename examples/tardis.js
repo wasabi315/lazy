@@ -1,7 +1,15 @@
 // A Tardis monad implementation using lazy.js
 
 import { Thunk, Fun, Evaluate } from "../lazy.js";
-import { Pair, Unit, undef, traceInt, seq, DoBuilder } from "../prelude.js";
+import {
+  Pair,
+  Unit,
+  undef,
+  DoBuilder,
+  IO,
+  runIO,
+  printInt,
+} from "../prelude.js";
 
 // pure x = \s -> (x, s)
 const pure = Fun((x, s) => Pair(x, s));
@@ -54,14 +62,15 @@ const ex1 = Thunk(() => {
     yield Thunk(() => getPast);
   });
   const [x, [_, fw]] = Thunk(() => m(noState));
-  const t1 = Thunk(() => traceInt(x));
-  const t2 = Thunk(() => traceInt(fw));
-  return seq(t1, t2);
+  return IO.Do(function* () {
+    yield Thunk(() => printInt(x));
+    yield Thunk(() => printInt(fw));
+  });
 });
 
-Evaluate(ex1);
+Evaluate(runIO(ex1));
 
-// getFuture >>= \x -> sendPast 1 >>= \_ -> pure x
+// getFuture >>= \x -> sendPast 2 >>= \_ -> pure x
 const ex2 = Thunk(() => {
   const m = TardisMonad.Do(function* () {
     const x = yield Thunk(() => getFuture);
@@ -69,9 +78,10 @@ const ex2 = Thunk(() => {
     return x;
   });
   const [x, [bw, _]] = Thunk(() => m(noState));
-  const t1 = Thunk(() => traceInt(x));
-  const t2 = Thunk(() => traceInt(bw));
-  return seq(t1, t2);
+  return IO.Do(function* () {
+    yield Thunk(() => printInt(x));
+    yield Thunk(() => printInt(bw));
+  });
 });
 
-Evaluate(ex2);
+Evaluate(runIO(ex2));

@@ -4,9 +4,10 @@ import {
   add,
   tail,
   Cons,
-  map,
-  rnfList,
-  traceInt,
+  traverseList_,
+  IO,
+  printInt,
+  runIO,
 } from "../prelude.js";
 
 const fibs = Thunk(() => {
@@ -16,9 +17,6 @@ const fibs = Thunk(() => {
   return Cons(0n, zs);
 });
 
-const main = Thunk(() => {
-  const ns = Thunk(() => map(traceInt, fibs));
-  return rnfList(ns);
-});
+const main = Thunk(() => traverseList_(IO)(printInt, fibs));
 
-Evaluate(main);
+Evaluate(runIO(main));

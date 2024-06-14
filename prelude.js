@@ -170,6 +170,21 @@ export const enumFrom = Fun((n) => {
   const ns = Thunk(() => enumFrom(m));
   return Cons(n, ns);
 });
+export const traverseList_ = (monad) =>
+  Fun((f, xs) =>
+    Case(xs, {
+      Nil: () =>
+        monad.Do(function* () {
+          const u = Thunk(() => Unit);
+          return u;
+        }),
+      Cons: (x, xs) =>
+        monad.Do(function* () {
+          yield Thunk(() => f(x));
+          yield Thunk(() => traverseList_(monad)(f, xs));
+        }),
+    })
+  );
 
 // force
 export const seq = Fun((x, y) => Case(x, { default: () => y }));
@@ -204,3 +219,32 @@ export function DoBuilder({ pure, bind }) {
     },
   };
 }
+
+// IO Monad
+const io_pure = Fun((x, s) => Pair(x, s));
+const io_bind = Fun((m, f, s) =>
+  Case(m(s), {
+    Pair: (x, s1) => f(x, s1),
+  })
+);
+export const IO = DoBuilder({ pure: io_pure, bind: io_bind });
+export const runIO = Fun((m) => {
+  const s = Thunk(() => Unit);
+  return Case(m(s), {
+    Pair: (x, _) => x,
+  });
+});
+
+export const printInt = Fun((n, s) =>
+  Case(s, {
+    Unit: () =>
+      Case(n, {
+        default: (n) => {
+          console.log(n);
+          const r = Thunk(() => Unit);
+          const s1 = Thunk(() => Unit);
+          return Pair(r, s1);
+        },
+      }),
+  })
+);

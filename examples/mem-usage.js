@@ -1,5 +1,5 @@
 import { Fun, Thunk, EvaluateGen } from "../lazy.js";
-import { Cons, map, traceInt, rnfList } from "../prelude.js";
+import { Cons, traverseList_, IO, printInt, runIO } from "../prelude.js";
 
 const repeat = Fun((x) => {
   const xs = Thunk(() => Cons(x, xs));
@@ -8,8 +8,7 @@ const repeat = Fun((x) => {
 
 const main = Thunk(() => {
   const ns = Thunk(() => repeat(1));
-  const ms = Thunk(() => map(traceInt, ns));
-  return rnfList(ms);
+  return traverseList_(IO)(printInt, ns);
 });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,6 +22,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   }
 })();
 
-for (const _ of EvaluateGen(main)) {
+for (const _ of EvaluateGen(runIO(main))) {
   await sleep(0);
 }
