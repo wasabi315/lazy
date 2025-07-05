@@ -5,7 +5,7 @@ import {
   Pair,
   Unit,
   undef,
-  DoBuilder,
+  MonadBuilder,
   IO,
   runIO,
   printInt,
@@ -29,7 +29,7 @@ const bind = Fun((m, f, [bw, fw]) => {
   return Pair(y, s3);
 });
 
-const TardisMonad = DoBuilder({ pure, bind });
+const TardisMonad = MonadBuilder({ pure, bind });
 
 const getPast = Fun(([bw, fw]) => {
   const s = Thunk(() => Pair(bw, fw));

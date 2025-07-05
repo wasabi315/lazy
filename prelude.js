@@ -171,20 +171,19 @@ export const enumFrom = Fun((n) => {
   return Cons(n, ns);
 });
 export const traverseList_ = (monad) =>
-  Fun((f, xs) =>
-    Case(xs, {
-      Nil: () =>
-        monad.Do(function* () {
-          const u = Thunk(() => Unit);
-          return u;
-        }),
-      Cons: (x, xs) =>
-        monad.Do(function* () {
-          yield Thunk(() => f(x));
-          yield Thunk(() => traverseList_(monad)(f, xs));
-        }),
-    })
-  );
+  Fun((f, xs) => {
+    return Case(xs, {
+      Nil: () => {
+        const u = Thunk(() => Unit);
+        return monad.pure(u);
+      },
+      Cons: (x, xs) => {
+        const y = Thunk(() => f(x));
+        const k = Fun((_) => traverseList_(monad)(f, xs));
+        return monad.bind(y, k);
+      },
+    });
+  });
 
 // force
 export const seq = Fun((x, y) => Case(x, { default: () => y }));
@@ -204,11 +203,11 @@ export const undef = Thunk(() => {
 });
 
 // Qualified Do
-export function DoBuilder({ pure, bind }) {
+export function MonadBuilder({ pure, bind }) {
   function aux(it, prev) {
     const { done, value } = it.next(prev);
     if (done) {
-      return pure(value ?? prev);
+      return pure(value);
     }
     const k = Fun((x) => aux(it, x));
     return bind(value, k);
@@ -217,6 +216,8 @@ export function DoBuilder({ pure, bind }) {
     Do(gen) {
       return Thunk(() => aux(gen()));
     },
+    pure,
+    bind,
   };
 }
 
@@ -227,10 +228,9 @@ const io_bind = Fun((m, f, s) =>
     Pair: (x, s1) => f(x, s1),
   })
 );
-export const IO = DoBuilder({ pure: io_pure, bind: io_bind });
+export const IO = MonadBuilder({ pure: io_pure, bind: io_bind });
 export const runIO = Fun((m) => {
-  const s = Thunk(() => Unit);
-  return Case(m(s), {
+  return Case(m(Unit), {
     Pair: (x, _) => x,
   });
 });
@@ -241,9 +241,7 @@ export const printInt = Fun((n, s) =>
       Case(n, {
         default: (n) => {
           console.log(n);
-          const r = Thunk(() => Unit);
-          const s1 = Thunk(() => Unit);
-          return Pair(r, s1);
+          return Pair(Unit, Unit);
         },
       }),
   })

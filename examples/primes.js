@@ -27,7 +27,7 @@ const primes = Thunk(() => {
 });
 
 const main = Thunk(() => {
-  const ns = Thunk(() => take(2000, primes));
+  const ns = Thunk(() => take(5000, primes));
   return traverseList_(IO)(printInt, ns);
 });
 
